@@ -18,6 +18,7 @@ type Config struct {
 
 type Database struct {
 	DatabaseConnection string
+	MigrationDir       string
 	DBTimeout          time.Duration
 }
 
@@ -47,6 +48,7 @@ func InitConfig() Config {
 		cfg := Config{
 			Database: Database{
 				DatabaseConnection: os.Getenv("DATABASE_CONNECTION"),
+				MigrationDir:       os.Getenv("MIGRATION_DIR"),
 				DBTimeout:          5 * time.Second,
 			},
 			Server: Server{
@@ -73,6 +75,7 @@ func InitConfig() Config {
 	cfg := Config{
 		Database: Database{
 			DatabaseConnection: getEnv("DATABASE_CONNECTION", ""),
+			MigrationDir:       getEnv("MIGRATION_DIR", ""),
 			DBTimeout:          5 * time.Second,
 		},
 		Cache: Cache{

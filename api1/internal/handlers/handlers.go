@@ -31,9 +31,9 @@ func NewHandler(storage storage.Storage, logger logger.Logger, addOnServ service
 	}
 }
 
-// @Summary Get person by ID
+// @Summary Получение данных о человеке по ID
 // @Tags persons
-// @Description Get detailed information about a person by ID
+// @Description Получение подробныйх данных о человеке по ID
 // @Accept json
 // @Produce json
 // @Param id path int true "Person ID"
@@ -53,7 +53,7 @@ func (h *Handler) FindPersonByID(ctx *gin.Context) {
 	person, err := h.storage.GetPersonByID(ctx.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, customerrors.ErrPersonNotFound) {
-			h.logger.Warn("Person not found", zap.Int("id", id))
+			h.logger.Info("Person not found", zap.Int("id", id))
 			ctx.JSON(http.StatusNotFound, gin.H{"error": "Person not found"})
 			return
 		}
@@ -64,9 +64,9 @@ func (h *Handler) FindPersonByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, person)
 }
 
-// @Summary Delete person by ID
+// @Summary Удаление человека
 // @Tags persons
-// @Description Delete person from the database by ID
+// @Description Удаление человека из базы данных по ID
 // @Accept json
 // @Produce json
 // @Param id path int true "Person ID"
@@ -80,31 +80,31 @@ func (h *Handler) DeletePersonByID(ctx *gin.Context) {
 
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil || id == 0 {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Ivalid ID format"})
+		ctx.JSON(http.StatusBadRequest, model.ErrorResponse{Error: "Ivalid ID format"})
 		return
 	}
 
 	err = h.storage.DeletePersonByID(ctx.Request.Context(), id)
 	if errors.Is(err, customerrors.ErrNothingToDelete) {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "Person not found"})
+		ctx.JSON(http.StatusNotFound, model.ErrorResponse{Error: "Person not found"})
 		return
 	}
 	if err != nil {
 		h.logger.Error("Не удалось удалить запись", zap.Int("id", id), zap.String("error", err.Error()))
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete"})
+		ctx.JSON(http.StatusInternalServerError, model.ErrorResponse{Error: "Faild to delete"})
 		return
 	}
 	ctx.Status(http.StatusOK)
 
 }
 
-// @Summary Update person by ID
+// @Summary Обновление данных о человеке
 // @Tags persons
-// @Description Update person's information by ID
+// @Description Обновение данных о человеке по ID
 // @Accept json
 // @Produce json
 // @Param id path int true "Person ID"
-// @Param person body model.Person true "Updated person info"
+// @Param person body model.PersonUpdateRequest true "Updated person info"
 // @Success 200
 // @Failure 400 {object} model.ErrorResponse
 // @Failure 404 {object} model.ErrorResponse
@@ -115,37 +115,37 @@ func (h *Handler) UpdatePersonByID(ctx *gin.Context) {
 
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil || id == 0 {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Ivalid ID format"})
+		ctx.JSON(http.StatusBadRequest, model.ErrorResponse{Error: "Ivalid ID format"})
 		return
 	}
-	var person model.Person
+	var person model.PersonUpdateRequest
 	if err := ctx.ShouldBindJSON(&person); err != nil {
 		h.logger.Error("Неверный формат запроса", zap.String("error", err.Error()))
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+		ctx.JSON(http.StatusBadRequest, model.ErrorResponse{Error: "Invalid JSON"})
 		return
 	}
 	person2, err := h.storage.GetPersonByID(ctx.Request.Context(), id)
 	if err != nil {
 		if errors.Is(err, customerrors.ErrPersonNotFound) {
 			h.logger.Warn("Person not found", zap.Int("id", id))
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "Person not found"})
+			ctx.JSON(http.StatusNotFound, model.ErrorResponse{Error: "Person not found"})
 			return
 		}
 		h.logger.Error("Ошибка получения данных о человеке", zap.String("error", err.Error()))
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get person"})
+		ctx.JSON(http.StatusInternalServerError,model.ErrorResponse{Error: "Internal server error"})
 		return
 	}
 	createPerson(person2, &person)
 	err = h.storage.UpdatePersonByID(ctx.Request.Context(), person2)
 	if err != nil {
 		h.logger.Error("Не удалось обновить запись", zap.Int("id", id), zap.String("error", err.Error()))
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update"})
+		ctx.JSON(http.StatusInternalServerError, model.ErrorResponse{Error: "Faild to update"})
 		return
 	}
 	ctx.Status(http.StatusOK)
 }
 
-func createPerson(person *model.Person, person2 *model.Person) {
+func createPerson(person *model.Person, person2 *model.PersonUpdateRequest) {
 	if person2.Name != "" {
 		person.Name = person2.Name
 	}
@@ -166,9 +166,9 @@ func createPerson(person *model.Person, person2 *model.Person) {
 	}
 }
 
-// @Summary Get persons with filters
+// @Summary Получить список человек
 // @Tags persons
-// @Description Get list of persons with optional filters
+// @Description Возвращает список человек учитывая фильтры
 // @Accept json
 // @Produce json
 // @Param name query string false "Name"
@@ -199,55 +199,66 @@ func (h *Handler) GetPersons(ctx *gin.Context) {
 	limit, err := strconv.Atoi(ctx.Query("limit"))
 	if err != nil {
 		h.logger.Debug("Неверный формат лимита")
+		if limit < 0 {
+			limit = 0
+		}
 		limit = 0
 	}
 	offset, err := strconv.Atoi(ctx.Query("offset"))
 	if err != nil {
 		h.logger.Debug("Неверный формат смещения")
+		if offset < 0 {
+			offset = 0
+		}
 		offset = 0
 	}
 	if person.Gender != "male" && person.Gender != "female" && person.Gender != "" {
 		h.logger.Debug("Неверный формат пола")
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid gender format"})
+		ctx.JSON(http.StatusBadRequest, model.ErrorResponse{Error: "Invalid gender format"})
 		return
 	}
 	persons, err := h.storage.GetPersonsByFilter(ctx.Request.Context(), person, offset, limit)
 	if err != nil {
 		h.logger.Error("Ошибка получения данных о людях", zap.String("error", err.Error()))
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get persons"})
+		ctx.JSON(http.StatusInternalServerError, model.ErrorResponse{Error: "Internal server error"})
 		return
 	}
 	if len(persons) == 0 {
 		h.logger.Warn("Нет людей с такими данными")
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "No persons found"})
+		ctx.JSON(http.StatusNotFound, model.ErrorResponse{Error: "Persons not found"})
 		return
 	}
 	h.logger.Info("Успешно получены данные о людях", zap.Int("count", len(persons)))
 	ctx.JSON(http.StatusOK, persons)
 }
 
-// @Summary Create a new person
+// @Summary Создает нового пользователя.
 // @Tags persons
-// @Description Add a new person to the database
+// @Description Добавление и обогащение данными ФИО.
 // @Accept json
 // @Produce json
-// @Param person body model.Person true "Person info"
-// @Success 200 {object} map[string]int
+// @Param person body model.PersonCreateRequest true "Person info"
+// @Success 200 {object} model.IdResponse
 // @Failure 400 {object} model.ErrorResponse
 // @Failure 500 {object} model.ErrorResponse
 // @Router /persons [post]
 func (h *Handler) CreatePerson(ctx *gin.Context) {
+	var persReq model.PersonCreateRequest
 	var person model.Person
-	if err := ctx.ShouldBindJSON(&person); err != nil {
+
+	if err := ctx.ShouldBindJSON(&persReq); err != nil {
 		h.logger.Debug("Ошибка при парсинге JSON", zap.String("error", err.Error()))
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
+		ctx.JSON(http.StatusBadRequest, model.ErrorResponse{Error: "Invalid JSON"})
 		return
 	}
-	if person.Surname == "" || person.Name == "" {
+	if persReq.Surname == "" || persReq.Name == "" {
 		h.logger.Debug("Неверный формат имени или фамилии")
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid name or surname"})
+		ctx.JSON(http.StatusBadRequest, model.ErrorResponse{Error: "Invalid name or surname format"})
 		return
 	}
+	person.Name = persReq.Name
+	person.Surname = persReq.Surname
+	person.Patronymic = persReq.Patronymic
 
 	perstats, err := h.cache.GetPerson(ctx.Request.Context(), person.Name)
 	if err != nil {
@@ -255,7 +266,7 @@ func (h *Handler) CreatePerson(ctx *gin.Context) {
 		err = h.addOnServ.Addon(&person)
 		if err != nil {
 			h.logger.Error("Ошибка в аддоне", zap.String("error", err.Error()))
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Addon error"})
+			ctx.JSON(http.StatusInternalServerError, model.ErrorResponse{Error: "Internal server error"})
 			return
 		}
 		if person.Age != 0 && person.Gender != "" && person.Nationality != "" {
@@ -279,9 +290,9 @@ func (h *Handler) CreatePerson(ctx *gin.Context) {
 	err = h.storage.CreatePerson(ctx.Request.Context(), &person)
 	if err != nil {
 		h.logger.Error("Ошибка создания человека", zap.String("error", err.Error()))
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create person"})
+		ctx.JSON(http.StatusInternalServerError, model.ErrorResponse{Error: "Faild to create person"})
 		return
 	}
 	h.logger.Info("Успешно создан человек", zap.Int("id", person.ID))
-	ctx.JSON(http.StatusOK, gin.H{"id": person.ID})
+	ctx.JSON(http.StatusOK, model.IdResponse{ID: person.ID})
 }

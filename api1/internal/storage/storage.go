@@ -16,8 +16,10 @@ DeletePersonByID(context.Context, int) error
 GetPersonsByFilter(context.Context,model.Person,int,int) ([]model.Person,error)
 CreatePerson(context.Context, *model.Person) error
 UpdatePersonByID(context.Context,*model.Person) error
+Migrate(migrationsDir string) error
 }
 
 func NewStorage(connectionString string,logger logger.Logger, timeout time.Duration	) Storage {
-	return postgres.NewPostgres(connectionString,logger,timeout)
+	db := postgres.ConnectDB(connectionString,timeout)
+	return postgres.NewPostgres(db,logger,timeout)
 }

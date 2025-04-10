@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/persons": {
             "get": {
-                "description": "Get list of persons with optional filters",
+                "description": "Возвращает список человек учитывая фильтры",
                 "consumes": [
                     "application/json"
                 ],
@@ -27,7 +27,7 @@ const docTemplate = `{
                 "tags": [
                     "persons"
                 ],
-                "summary": "Get persons with filters",
+                "summary": "Получить список человек",
                 "parameters": [
                     {
                         "type": "string",
@@ -103,7 +103,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Add a new person to the database",
+                "description": "Добавление и обогащение данными ФИО.",
                 "consumes": [
                     "application/json"
                 ],
@@ -113,7 +113,7 @@ const docTemplate = `{
                 "tags": [
                     "persons"
                 ],
-                "summary": "Create a new person",
+                "summary": "Создает нового пользователя.",
                 "parameters": [
                     {
                         "description": "Person info",
@@ -121,7 +121,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.Person"
+                            "$ref": "#/definitions/model.PersonCreateRequest"
                         }
                     }
                 ],
@@ -129,10 +129,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "integer"
-                            }
+                            "$ref": "#/definitions/model.IdResponse"
                         }
                     },
                     "400": {
@@ -152,7 +149,7 @@ const docTemplate = `{
         },
         "/persons/{id}": {
             "get": {
-                "description": "Get detailed information about a person by ID",
+                "description": "Получение подробныйх данных о человеке по ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -162,7 +159,7 @@ const docTemplate = `{
                 "tags": [
                     "persons"
                 ],
-                "summary": "Get person by ID",
+                "summary": "Получение данных о человеке по ID",
                 "parameters": [
                     {
                         "type": "integer",
@@ -200,7 +197,7 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Update person's information by ID",
+                "description": "Обновение данных о человеке по ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -210,7 +207,7 @@ const docTemplate = `{
                 "tags": [
                     "persons"
                 ],
-                "summary": "Update person by ID",
+                "summary": "Обновление данных о человеке",
                 "parameters": [
                     {
                         "type": "integer",
@@ -225,7 +222,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.Person"
+                            "$ref": "#/definitions/model.PersonUpdateRequest"
                         }
                     }
                 ],
@@ -254,7 +251,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete person from the database by ID",
+                "description": "Удаление человека из базы данных по ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -264,7 +261,7 @@ const docTemplate = `{
                 "tags": [
                     "persons"
                 ],
-                "summary": "Delete person by ID",
+                "summary": "Удаление человека",
                 "parameters": [
                     {
                         "type": "integer",
@@ -309,6 +306,14 @@ const docTemplate = `{
                 }
             }
         },
+        "model.IdResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                }
+            }
+        },
         "model.Person": {
             "type": "object",
             "properties": {
@@ -340,6 +345,43 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "model.PersonCreateRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "patronymic": {
+                    "type": "string"
+                },
+                "surname": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.PersonUpdateRequest": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nationality": {
+                    "type": "string"
+                },
+                "patronymic": {
+                    "type": "string"
+                },
+                "surname": {
+                    "type": "string"
+                }
+            }
         }
     }
 }`
@@ -351,7 +393,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api",
 	Schemes:          []string{},
 	Title:            "Effective Mobile API",
-	Description:      "This is an API for managing persons.",
+	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

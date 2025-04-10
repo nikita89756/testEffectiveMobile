@@ -1,7 +1,6 @@
 package main
 
 import (
-	
 	"log"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/nikita89756/testEffectiveMobile/internal/storage"
 	config "github.com/nikita89756/testEffectiveMobile/pkg/config"
 	logger "github.com/nikita89756/testEffectiveMobile/pkg/logger"
+	"go.uber.org/zap"
 
 	_ "github.com/nikita89756/testEffectiveMobile/docs"
 	swaggerFiles "github.com/swaggo/files"
@@ -22,7 +22,6 @@ const(timeout = 5*time.Second)
 
 // @title Effective Mobile API
 // @version 1.0
-// @description This is an API for managing persons.
 // @host 0.0.0.0:8080
 // @BasePath /api
 func main() {
@@ -35,10 +34,13 @@ func main() {
 	}
 	logger.Info("Инициализация логгера завершена")
 
-
-	//TODO db initializer
 	db:= storage.NewStorage(cfg.DatabaseConnection,logger, cfg.DBTimeout)
 
+	err = db.Migrate(cfg.MigrationDir)
+	if err != nil {
+		logger.Error("ошибка миграции базы данных", zap.Error(err))
+		return
+	}
 	cache,err := cache.NewRedisClient(cfg.Cache.Address, cfg.Cache.Password, cfg.Cache.Db,logger)
 	if err != nil {
 		logger.Error("ошибка создания клиента Redis")

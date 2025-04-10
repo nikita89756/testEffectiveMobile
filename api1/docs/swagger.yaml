@@ -5,6 +5,11 @@ definitions:
       error:
         type: string
     type: object
+  model.IdResponse:
+    properties:
+      id:
+        type: integer
+    type: object
   model.Person:
     properties:
       age:
@@ -26,10 +31,33 @@ definitions:
       updated_at:
         type: string
     type: object
+  model.PersonCreateRequest:
+    properties:
+      name:
+        type: string
+      patronymic:
+        type: string
+      surname:
+        type: string
+    type: object
+  model.PersonUpdateRequest:
+    properties:
+      age:
+        type: integer
+      gender:
+        type: string
+      name:
+        type: string
+      nationality:
+        type: string
+      patronymic:
+        type: string
+      surname:
+        type: string
+    type: object
 host: 0.0.0.0:8080
 info:
   contact: {}
-  description: This is an API for managing persons.
   title: Effective Mobile API
   version: "1.0"
 paths:
@@ -37,7 +65,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get list of persons with optional filters
+      description: Возвращает список человек учитывая фильтры
       parameters:
       - description: Name
         in: query
@@ -88,29 +116,27 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/model.ErrorResponse'
-      summary: Get persons with filters
+      summary: Получить список человек
       tags:
       - persons
     post:
       consumes:
       - application/json
-      description: Add a new person to the database
+      description: Добавление и обогащение данными ФИО.
       parameters:
       - description: Person info
         in: body
         name: person
         required: true
         schema:
-          $ref: '#/definitions/model.Person'
+          $ref: '#/definitions/model.PersonCreateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties:
-              type: integer
-            type: object
+            $ref: '#/definitions/model.IdResponse'
         "400":
           description: Bad Request
           schema:
@@ -119,14 +145,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/model.ErrorResponse'
-      summary: Create a new person
+      summary: Создает нового пользователя.
       tags:
       - persons
   /persons/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete person from the database by ID
+      description: Удаление человека из базы данных по ID
       parameters:
       - description: Person ID
         in: path
@@ -150,13 +176,13 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/model.ErrorResponse'
-      summary: Delete person by ID
+      summary: Удаление человека
       tags:
       - persons
     get:
       consumes:
       - application/json
-      description: Get detailed information about a person by ID
+      description: Получение подробныйх данных о человеке по ID
       parameters:
       - description: Person ID
         in: path
@@ -182,13 +208,13 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/model.ErrorResponse'
-      summary: Get person by ID
+      summary: Получение данных о человеке по ID
       tags:
       - persons
     put:
       consumes:
       - application/json
-      description: Update person's information by ID
+      description: Обновение данных о человеке по ID
       parameters:
       - description: Person ID
         in: path
@@ -200,7 +226,7 @@ paths:
         name: person
         required: true
         schema:
-          $ref: '#/definitions/model.Person'
+          $ref: '#/definitions/model.PersonUpdateRequest'
       produces:
       - application/json
       responses:
@@ -218,7 +244,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/model.ErrorResponse'
-      summary: Update person by ID
+      summary: Обновление данных о человеке
       tags:
       - persons
 swagger: "2.0"

@@ -15,6 +15,9 @@ build:
 	@mkdir -p ./bin 
 	@go build -o $(BINARY_PATH) $(CMD_PATH)
 
+tests: 
+	go test -v ./...
+
 swag: 
 	swag init -g $(CMD_PATH)
 migrate-up: 

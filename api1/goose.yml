@@ -1,3 +1,0 @@
-development:
- driver: postgres         
- open: "host=localhost user=nikita password=password123 dbname=persondb port=5432 sslmode=disable" 
