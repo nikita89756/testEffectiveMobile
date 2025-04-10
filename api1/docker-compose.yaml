@@ -1,0 +1,56 @@
+services:
+
+  db:
+    image: postgres:15-alpine # Используем конкретную версию Alpine для меньшего размера
+    container_name: person-db
+    environment:
+      
+      POSTGRES_USER: nikita
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: persondb
+      PGDATA: /var/lib/postgresql/data/pgdata 
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/pgdata 
+    ports:
+     
+      - "5432:5432"
+    healthcheck:
+      
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-myuser} -d $${POSTGRES_DB:-persondb}"] # 
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped 
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile 
+
+    env_file:
+      - .env 
+
+    ports:
+      - "0.0.0.0:8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy 
+      redis:
+        condition: service_healthy
+    restart: unless-stopped 
+  redis:
+    image: 'redis:latest'
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  postgres_data:
+    driver: local 
+  redis_data:
